@@ -1,0 +1,14 @@
+name: arabic-llm-service
+description: High-throughput Arabic LLM Serving Pipeline with vLLM PagedAttention and llama.cpp SIMD backend
+license: Apache-2.0
+urls:
+  - https://github.com/yousefkhaled2005/enterprise-ai-inference-engine
+config_file: |
+  name: arabic-llm
+  backend: llama-cpp
+  parameters:
+    model: Yousef1258852/arabert-sentiment-v2
+    context_size: 8192
+    threads: 16
+    f16: true
+    mmap: true

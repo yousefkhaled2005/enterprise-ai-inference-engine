@@ -1,0 +1,355 @@
+---
+title: "Backends"
+description: "Learn how to use, manage, and develop backends in LocalAI"
+weight: 80
+url: "/backends/"
+---
+
+
+LocalAI supports a variety of backends that can be used to run different types of AI models. There are core Backends which are included, and there are containerized applications that provide the runtime environment for specific model types, such as LLMs, diffusion models, or text-to-speech models.
+
+## Available Backends
+
+LocalAI ships **60+ backends** covering text generation, speech-to-text, text-to-speech, music and sound generation, image and video generation, vision and object detection, audio processing, reranking, fine-tuning, and more. Each one is published as an on-demand OCI image with the appropriate acceleration variants (CPU, CUDA 12/13, ROCm, Intel SYCL, Vulkan, Metal, Jetson L4T).
+
+For the complete list of backends, the model families they support, and their acceleration targets, see the [Backend & Model Compatibility Table]({{%relref "reference/compatibility-table" %}}). The authoritative source is [`backend/index.yaml`](https://github.com/mudler/LocalAI/blob/master/backend/index.yaml), and the same catalog is browsable in the web UI under the **Backends** section.
+
+## Managing Backends in the UI
+
+The **Operate → Runtime → Backends** page is the canonical home for the
+complete backend lifecycle. It is one list with two views, **Installed** and
+**Catalog**, each with a count:
+
+1. **Catalog** browses configured galleries, searches by name or description,
+   filters by capability, and installs a backend. Catalog is the default view.
+   On a new installation with nothing installed it recommends llama-cpp, which
+   runs most text models, with a single install button.
+2. **Installed** shows the runtimes present on the host or cluster, those with
+   an update first. Search and filter by user, system, update, or offline-node
+   state.
+3. Variant and development builds remain opt-in refinements. Target-node links
+   compose with the current view and selection instead of opening a separate
+   management page.
+
+Each row shows the backend, its version and its state: **Current**, **Update
+1.2.0**, **Not installed**, **Queued**, **Removing**, or a progress bar while it
+installs, with **Cancel** in the row. A failed install says why, with **Retry**.
+The one action that matters sits in the row (**Install**, **Update**), and the
+chevron opens the row for the rest. **Update all** starts every pending update,
+and **Check for updates** asks the server to check now instead of waiting for
+its next scheduled check. **From URL** installs a backend from an OCI image, a
+URL or a path.
+
+The current view, search, filter, open row, and target node are stored in the
+URL. Browser Back and shared links therefore restore the same state.
+
+**Removing** a backend asks first. The dialog names the configured models that
+ask for that backend by name, and any installed meta backend that points at it
+(for example `llama-cpp` pointing at a hardware-specific build), because those
+stop working without it. The catalog does not report a size per backend, and
+LocalAI keeps no earlier version of a backend, so there is no size column and
+no rollback.
+
+**Operate → Runtime → Logs** (`/app/backend-logs`) lists the backend processes
+that have printed something. Open one to read its output live, filter by stream
+or text, follow the end, show or hide times, export the lines as JSON, or clear
+them. Clearing hides the lines at once and wipes them on the server after 6
+seconds, unless you press **Undo**.
+
+Installs run in the background. The strip at the top of the app follows the
+current one, and **Operate → Activity** lists everything in flight, what needs
+attention, and what has finished, and is where a running install is paused,
+cancelled or a failed one retried. See [Activity]({{% relref "operations/activity" %}}).
+
+Each open row displays:
+- Backend name and description
+- Type of models it supports
+- Installation status
+- Install, reinstall, upgrade, or delete actions as appropriate
+- Version, source, digest, placement, and catalog information
+
+## Backend Galleries
+
+Backend galleries are repositories that contain backend definitions. They work similarly to model galleries but are specifically for backends.
+
+### Adding a Backend Gallery
+
+You can add backend galleries by specifying the **Environment Variable**  `LOCALAI_BACKEND_GALLERIES`:
+
+```bash
+export LOCALAI_BACKEND_GALLERIES='[{"name":"my-gallery","url":"https://raw.githubusercontent.com/username/repo/main/backends"}]'
+```
+The URL needs to point to a valid yaml file, for example:
+
+```yaml
+- name: "test-backend"
+  uri: "quay.io/image/tests:localai-backend-test"
+  alias: "foo-backend"
+```
+
+Where URI is the path to an OCI container image.
+
+To use a backend gallery or backend images that need authentication, such as a private registry, add a matching entry to the credentials file. See [Private Registries and Galleries]({{% relref "advanced/private-sources" %}}).
+
+### Backend Gallery Structure
+
+A backend gallery is a collection of YAML files, each defining a backend. Here's an example structure:
+
+```yaml
+name: "llm-backend"
+description: "A backend for running LLM models"
+uri: "quay.io/username/llm-backend:latest"
+alias: "llm"
+tags:
+  - "llm"
+  - "text-generation"
+```
+
+### Verifying OCI Backends
+
+The default backend gallery tries `https://index.localai.io/backends`, then `github:mudler/LocalAI/backend/index.yaml@master`, then `oci://quay.io/go-skynet/local-ai-backends:gallery-backends`. The OCI fallback is signed by `gallery_publish.yml`. Its `artifact_verification` policy applies only to the gallery artifact; `verification` continues to control backend image signatures. Existing custom gallery lists are not changed. See [gallery publishing]({{% relref "features/model-gallery#official-gallery-publishing" %}}) for details.
+
+Backend galleries can require keyless Sigstore signatures for every OCI image
+they provide. Add a `verification` policy to the gallery configuration, then
+enable strict integrity mode:
+
+```bash
+export LOCALAI_BACKEND_GALLERIES='[{"name":"localai","url":"https://index.localai.io/backends","mirrors":["github:mudler/LocalAI/backend/index.yaml@master"],"verification":{"issuer":"https://token.actions.githubusercontent.com","identity_regex":"^https://github\\.com/mudler/LocalAI/\\.github/workflows/backend_merge\\.yml@refs/(heads/master|tags/.+)$"}}]'
+export LOCALAI_REQUIRE_BACKEND_INTEGRITY=1
+local-ai run
+```
+
+The policy pins the Fulcio issuer and the GitHub Actions workflow identity that
+signed the image. The identity expression covers development images produced
+from `master` and release images produced from tags. Use a narrower expression
+if your deployment only accepts one release channel.
+
+Without strict mode, an OCI gallery without a verification policy installs
+with a warning. With strict mode, LocalAI refuses galleries without a policy,
+images without a compatible Sigstore bundle, and signatures that do not match
+the configured identity. Existing images published before bundle signing was
+enabled must be rebuilt or re-signed before strict deployments can install
+them.
+
+An optional `not_before` RFC3339 value revokes signatures logged before that
+time. Advance it after a signing-workflow compromise, then rebuild or re-sign
+the trusted images:
+
+```json
+{
+  "verification": {
+    "issuer": "https://token.actions.githubusercontent.com",
+    "identity_regex": "^https://github\\.com/mudler/LocalAI/\\.github/workflows/backend_merge\\.yml@refs/(heads/master|tags/.+)$",
+    "not_before": "2026-08-05T00:00:00Z"
+  }
+}
+```
+
+When one reusable workflow signs images for several repositories, the
+certificate identity names the shared workflow, not the repository that called
+it, so an identity match alone accepts an image signed for any of those
+repositories. Add `source_repository` to pin the repository the signature was
+made for. LocalAI compares it exactly with the source-repository extension of
+the signing certificate: a trailing slash, a different letter case or a `.git`
+suffix does not match. The value must be an `https://` URL, or LocalAI refuses
+the policy when it uses it, when it installs a backend or fetches an `oci://`
+gallery. LocalAI versions before this field existed ignore it and do not pin
+the repository, so upgrade every node, workers included, before you rely on it:
+
+```json
+{
+  "verification": {
+    "issuer": "https://token.actions.githubusercontent.com",
+    "identity_regex": "^https://github\\.com/example/signer/\\.github/workflows/release\\.yml@refs/tags/v.+$",
+    "source_repository": "https://github.com/acme/backends"
+  }
+}
+```
+
+## Pre-installing Backends
+
+You can pre-install backends when starting LocalAI using the `LOCALAI_EXTERNAL_BACKENDS` environment variable:
+
+```bash
+export LOCALAI_EXTERNAL_BACKENDS="llm-backend,diffusion-backend"
+local-ai run
+```
+
+## Backend Directory Format
+
+Every backend, whether the gallery installed it into the user-managed
+location or a system package shipped it, is a directory with one
+required file:
+
+- `run.sh` — the entry point LocalAI executes to start the backend.
+
+and one optional file, `metadata.json`:
+
+```json
+{
+  "name": "rocm-audio-cpp",
+  "alias": "audio-cpp"
+}
+```
+
+- `name` — the concrete backend name (defaults to the directory name).
+- `alias` — registers this directory as a *variant* of a backend
+  family. When several installed variants share an alias
+  (`cpu-audio-cpp`, `rocm-audio-cpp`, ... all aliased to `audio-cpp`),
+  a model config using `backend: audio-cpp` resolves to the variant
+  best matching the host's capability (CUDA before Vulkan before CPU
+  on an NVIDIA host, ROCm first on AMD, and so on). Each variant also
+  stays individually addressable by its concrete name, e.g.
+  `backend: cpu-audio-cpp` to keep VRAM free for other models.
+- `meta_backend_for` — points a meta entry at a concrete backend
+  directory installed next to it.
+
+A directory without `metadata.json` is a plain backend under its
+directory name. Gallery installs write this metadata automatically
+(with additional bookkeeping fields such as `gallery_url` and
+`installed_at`); it only needs writing by hand when packaging backends
+outside the gallery.
+
+## System-Provided Backends
+
+Backends do not have to come from the gallery: directories under
+`LOCALAI_BACKENDS_SYSTEM_PATH` (default `/var/lib/local-ai/backends`)
+are discovered on every scan, using the same
+[directory format](#backend-directory-format) as user-managed
+backends. This is the integration point for distribution packages —
+the package manager installs backends there, while gallery installs
+keep living in the user-managed `LOCALAI_BACKENDS_PATH`.
+
+One difference in error handling: a system directory with unreadable
+metadata is skipped with a warning, while unreadable metadata in the
+user-managed location fails the listing — a system package must never
+be able to break the discovery of the user's own backends.
+
+### Precedence between the two locations
+
+User-managed backends always win over system-provided ones:
+
+- **Same name in both locations** — the user-managed backend hides the
+  system one entirely.
+- **Family takeover** — installing *any* variant of an alias family
+  into the user-managed location (e.g. from the gallery) replaces the
+  whole system family: the alias resolves only among user-managed
+  variants, and the system family's concrete names disappear from the
+  listing. Variants of one family are versioned together; resolution
+  never mixes installations of different origins within a family, and
+  a stale system variant is not kept reachable.
+- **Names never get hijacked** — a system variant's alias cannot take
+  over a name that exists as a user-managed backend (including a meta
+  backend): `backend:
+  audio-cpp` keeps running the user's `audio-cpp` installation even if
+  a system package later ships variants aliased to that name.
+
+## Creating a Backend
+
+To create a new backend, you need to:
+
+1. Create a container image that implements the LocalAI backend interface
+2. Define a backend YAML file
+3. Publish your backend to a container registry
+
+### Backend Container Requirements
+
+Your backend container should:
+
+1. Implement the LocalAI backend interface (gRPC or HTTP)
+2. Handle model loading and inference
+3. Support the required model types
+4. Include necessary dependencies. Python backends are unpacked from the
+   builder path into a runtime directory, so packages must be installed into
+   the backend virtualenv with a regular `pip install .` / `uv pip install .`
+   — not an editable (`-e`) source install. An editable finder keeps pointing
+   at the vanished builder tree, and `import` fails after relocation.
+5. Have a top level `run.sh` file that will be used to run the backend
+6. Pushed to a registry so can be used in a gallery
+
+{{% notice warning %}}
+An already-installed Python backend that was built with an editable install
+(for example vllm-omni from v4.0.0) keeps that broken finder until it is
+replaced with a rebuilt artifact. Reusing or renaming the unpacked directory
+does not rewrite the stale path; delete or upgrade the backend so the new
+site-packages copy is what runs.
+{{% /notice %}}
+
+### Getting started
+
+For getting started, see the available backends in LocalAI here: https://github.com/mudler/LocalAI/tree/master/backend . 
+
+- For Python based backends there is a template that can be used as starting point: https://github.com/mudler/LocalAI/tree/master/backend/python/common/template . 
+- For Golang based backends, you can see the `piper` backend as an example: https://github.com/mudler/LocalAI/tree/master/backend/go/piper
+- For C++ based backends, you can see the `llama-cpp` backend as an example: https://github.com/mudler/LocalAI/tree/master/backend/cpp/llama-cpp
+
+### Publishing Your Backend
+
+1. Build your container image:
+   ```bash
+   docker build -t quay.io/username/my-backend:latest .
+   ```
+
+2. Push to a container registry:
+   ```bash
+   docker push quay.io/username/my-backend:latest
+   ```
+
+3. Add your backend to a gallery:
+   - Create a YAML entry in your gallery repository
+   - Include the backend definition
+   - Make the gallery accessible via HTTP/HTTPS
+
+## Backend Types
+
+LocalAI supports various types of backends:
+
+- **LLM Backends**: For running language models (e.g., llama.cpp, vLLM, vllm.cpp, SGLang, transformers, MLX, and [RKLLM on Rockchip NPUs]({{% relref "features/rkllm" %}}) through the cloud-proxy backend)
+- **Speech-to-Text Backends**: For transcription, forced alignment and speaker diarization (e.g., whisper.cpp, parakeet.cpp, moss-transcribe.cpp, [NeMo-Speech.cpp]({{%relref "features/nemo-speech-cpp" %}}), faster-whisper, [Whisper-Medusa]({{%relref "features/whisper-medusa" %}}), FunASR/SenseVoice, NeMo, [audio.cpp]({{%relref "features/audio-cpp" %}}))
+- **Text-to-Speech Backends**: For speech synthesis (e.g., piper, Kokoro, VibeVoice, Qwen3-TTS, [NeMo-Speech.cpp]({{%relref "features/nemo-speech-cpp" %}}), [audio.cpp]({{%relref "features/audio-cpp" %}}))
+- **Sound Generation Backends**: For music and audio generation (e.g., ACE-Step, [audio.cpp]({{%relref "features/audio-cpp" %}}))
+- **Sound Classification Backends**: For sound-event classification / audio tagging - identifying everyday sounds like baby cry, glass breaking, alarms (e.g., ced.cpp)
+- **Image & Video Generation Backends**: For diffusion and audio-conditioned avatar models (e.g., stable-diffusion.cpp, diffusers, vLLM-Omni, [MLX-Video on Apple Silicon]({{%relref "features/video-generation" %}}), [LongCat-Video]({{%relref "features/video-generation" %}}), [vllm.cpp / MiniMax-H3]({{%relref "features/video-generation" %}}))
+- **3D Generation Backends**: For image-to-3D mesh generation ([trellis2.cpp]({{%relref "features/3d-generation" %}}) — Microsoft TRELLIS.2, producing GLB assets with PBR textures)
+- **Vision & Detection Backends**: For object detection, segmentation, depth, and face/voice recognition (e.g., rf-detr.cpp, locate-anything.cpp, sam3.cpp, insightface)
+- **Audio Processing Backends**: For voice activity detection and audio enhancement (e.g., Silero VAD, LocalVQE, [audio.cpp]({{%relref "features/audio-cpp" %}}))
+- **Source Separation & Voice Conversion Backends**: For splitting a mix into named stems (vocals, drums, bass) and for converting speech or singing to a target voice (e.g., [audio.cpp]({{%relref "features/audio-cpp" %}}))
+- **Utility Backends**: For reranking, PII/NER token classification, fine-tuning, quantization, and vector storage (e.g., rerankers, privacy-filter.cpp, TRL, local-store, valkey-store, qdrant-store)
+
+See the [Backend & Model Compatibility Table]({{%relref "reference/compatibility-table" %}}) for the full catalog.
+
+### DS4 request cancellation
+
+The DS4 backend stops inference when a client cancels or disconnects, including
+when a streaming response can no longer be written. Already-streamed chunks
+cannot be retracted; DS4 does not flush incomplete buffered parser state or
+persist an abandoned request to the disk KV cache. Cancellation is cooperative:
+DS4 checks it at safe prompt-prefill and decode-loop boundaries, so a GPU kernel
+already in flight may finish before the request stops.
+
+### llama.cpp request cancellation
+
+The llama.cpp backend stops a streaming generation as soon as the response can
+no longer be written to the client, not only when the RPC is formally cancelled.
+A stream never recovers once a write fails, so the backend treats the first
+failed write as final and returns, which releases the slot the generation held.
+
+This matters most for a model configured without a generation cap. With
+`max_tokens: 0` and a large `context_size`, an abandoned request that keeps
+decoding occupies its slot until it reaches the context limit — tens of minutes
+on a large model — and every other request for that model queues behind it. A
+couple of abandoned requests is enough to make a healthy node look wedged.
+
+Cancellation is cooperative and checked between decoded results, so a batch
+already in flight may finish before the request stops.
+
+{{% notice tip %}}
+A generation cap is still worth setting. Cancellation only helps once a client
+has actually gone away; a client that waits receives the full context worth of
+tokens. Set `max_tokens` on the model config, and keep `repeat_penalty` above
+`1` so a repetition loop terminates on its own.
+{{% /notice %}}
+
+### Motion capture
+
+- [gem-x.cpp](https://github.com/localai-org/gem-x.cpp): live SOMA-77 and SMPL-24 human poses on CPU/Vulkan. See [Motion Capture](/features/motion/).

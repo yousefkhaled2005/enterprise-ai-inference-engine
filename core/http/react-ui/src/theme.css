@@ -1,0 +1,207 @@
+/* LocalAI theme bridge.
+   The palette lives in theme-localai.css as the kit's colour roles
+   (--dk-*), for light and dark. This file keeps the app's own variable
+   names (--color-*, --shadow-*) and points each one at a role, so every
+   existing rule picks up the palette without being edited. The roles
+   switch with [data-theme] on <html>, so nothing here depends on the mode
+   except the few data-visualisation hues that have no role.
+   Non-colour tokens (spacing, type, motion, layout) are unchanged. */
+:root {
+  /* Surfaces */
+  --color-bg-primary: var(--dk-canvas);
+  --color-bg-secondary: var(--dk-card);
+  --color-bg-tertiary: var(--dk-inset);
+  --color-bg-overlay: color-mix(in srgb, var(--dk-canvas) 92%, transparent);
+  --color-bg-hover: var(--dk-hover);
+
+  --color-surface-sunken: var(--dk-inset);
+  --color-surface-hover: var(--dk-hover);
+  --color-surface-elevated: color-mix(in srgb, var(--dk-card) 88%, var(--dk-text));
+
+  /* Primary: the accent. Hover and press mix in a little text colour,
+     as the kit does for filled accent controls. */
+  --color-primary: var(--dk-accent);
+  --color-primary-hover: color-mix(in srgb, var(--dk-accent) 88%, var(--dk-text));
+  --color-primary-active: color-mix(in srgb, var(--dk-accent) 76%, var(--dk-text));
+  --color-primary-text: var(--dk-on-accent);
+  --color-primary-light: var(--dk-accent-wash);
+  --color-primary-border: color-mix(in srgb, var(--dk-accent) 38%, transparent);
+
+  --color-selection-bg: color-mix(in srgb, var(--dk-accent) 32%, transparent);
+
+  --color-secondary: var(--dk-muted);
+  --color-secondary-hover: var(--dk-text);
+  --color-secondary-light: color-mix(in srgb, var(--dk-muted) 14%, transparent);
+
+  --color-accent: var(--dk-accent);
+  --color-accent-hover: color-mix(in srgb, var(--dk-accent) 88%, var(--dk-text));
+  --color-accent-light: var(--dk-accent-wash);
+  --color-accent-border: color-mix(in srgb, var(--dk-accent) 38%, transparent);
+
+  /* Text */
+  --color-text-primary: var(--dk-text);
+  --color-text-secondary: color-mix(in srgb, var(--dk-text) 78%, var(--dk-muted));
+  --color-text-muted: var(--dk-muted);
+  --color-text-tertiary: var(--dk-muted);
+  --color-text-disabled: color-mix(in srgb, var(--dk-muted) 60%, var(--dk-canvas));
+  --color-text-inverse: var(--dk-on-accent);
+
+  /* Borders: hairlines use the decorative edge, strong lines and form
+     controls use the control edge. */
+  --color-border-subtle: color-mix(in srgb, var(--dk-edge) 65%, var(--dk-canvas));
+  --color-border-default: var(--dk-edge);
+  --color-border-strong: var(--dk-control-edge);
+  --color-border-divider: color-mix(in srgb, var(--dk-edge) 75%, var(--dk-canvas));
+  /* The edge of a layered surface (card, pane, composer, popover): the
+     decorative edge with a little text colour, so a card reads against the
+     canvas in dark as well as light. */
+  --color-border-card: color-mix(in srgb, var(--dk-edge) 88%, var(--dk-text));
+  --color-border-primary: color-mix(in srgb, var(--dk-accent) 55%, transparent);
+  --color-border-focus: var(--dk-accent);
+
+  /* Status */
+  --color-success: var(--dk-ok);
+  --color-success-light: var(--dk-ok-wash);
+  --color-success-border: color-mix(in srgb, var(--dk-ok) 38%, transparent);
+  --color-warning: var(--dk-warn);
+  --color-warning-light: var(--dk-warn-wash);
+  --color-warning-border: color-mix(in srgb, var(--dk-warn) 38%, transparent);
+  --color-error: var(--dk-error);
+  --color-error-light: var(--dk-error-wash);
+  --color-error-border: color-mix(in srgb, var(--dk-error) 38%, transparent);
+  --color-info: var(--dk-accent-text);
+  --color-info-light: var(--dk-accent-wash);
+  --color-info-border: color-mix(in srgb, var(--dk-accent) 38%, transparent);
+
+  --color-modal-backdrop: var(--dk-scrim);
+
+  --color-focus-ring: var(--dk-accent);
+  --color-eyebrow: var(--dk-accent-text);
+
+  /* Data viz: roles where one fits, fixed hues for the rest (see the
+     data-theme blocks below). */
+  --color-data-1: var(--dk-accent);
+  --color-data-2: var(--dk-error);
+  --color-data-4: var(--dk-warn);
+  --color-data-5: var(--dk-ok);
+  --color-data-8: var(--dk-accent-text);
+
+  /* Log streams */
+  --color-log-stdout: var(--color-text-secondary);
+  --color-log-stderr: var(--dk-error-text);
+  --color-log-info: var(--dk-accent-text);
+  --color-log-warn: var(--dk-warn-text);
+
+  /* Shadows: the kit's two, tinted by the theme, plus a faint one for
+     small parts. Cards are flat with the rest shadow; floating surfaces
+     (menus, dialogs, toasts) use the float shadow. */
+  --shadow-subtle: 0 1px 2px rgb(var(--dk-shadow-tint) / calc(.06 * var(--dk-shadow-k, 1)));
+  --shadow-sm: var(--dk-shadow-rest);
+  --shadow-md: var(--dk-shadow-float);
+  --shadow-lg: var(--dk-shadow-float);
+  --shadow-glow: var(--dk-shadow-float);
+  --shadow-sidebar: none;
+
+  --shadow-inset-top: inset 0 0 0 0 transparent;
+  --shadow-inset-hi: inset 0 0 0 0 transparent;
+
+  --color-toggle-off: var(--dk-control-edge);
+  --color-toggle-on: var(--dk-accent);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 180ms;
+  --duration-slow: 260ms;
+  --ease-default: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:  cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-reveal: 420ms;
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);  /* ease-out-expo-ish */
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  --space-section: clamp(2rem, 1.2rem + 3vw, 3.5rem);
+
+  /* Radii — the shared kit scale: small parts 8, controls 12, panels 16,
+     cards 20. Dialogs use --dk-radius-4 (28) directly. */
+  --radius-sm: var(--dk-radius-1);
+  --radius-md: var(--dk-radius-2);
+  --radius-lg: 16px;
+  --radius-xl: var(--dk-radius-3);
+  --radius-full: 9999px;
+
+  /* Typography — Geist Variable + Geist Mono Variable */
+  --font-sans: "Geist", "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Variable", ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* The kit's type scale: 12 / 13 / 15 / 17 / 21 / 32 / 44. Body and list
+     text is 15; 13 is for secondary lines and button labels. */
+  --text-xs: var(--dk-text-12);
+  --text-sm: var(--dk-text-13);
+  --text-base: var(--dk-text-15);
+  --text-lg: var(--dk-text-17);
+  --text-xl: var(--dk-text-21);
+  --text-2xl: 1.625rem;
+  --text-3xl: var(--dk-text-32);
+  --text-4xl: var(--dk-text-44);
+
+  /* Control heights: 40 for buttons, inputs, selects and tabs; 32 compact. */
+  --control-h: 40px;
+  --control-h-sm: 32px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 64px;
+
+  /* Page-width archetypes — applied via .page / .page--narrow /
+     .page--medium / .page--wide. Default is wide-enough for ops/data
+     tables; medium suits two-column app pages (sticky nav + form);
+     narrow caps reading width. */
+  --page-max-narrow: 760px;
+  --page-max-medium: 1080px;
+  --page-max-default: 1600px;
+  --page-max-wide: none;
+
+  /* Responsive breakpoints — kept here so JS can read them via getComputedStyle. */
+  --bp-mobile: 640px;
+  --bp-tablet: 1024px;
+}
+
+/* Surface ladder of the calm palette. Floating surfaces (menus, popovers)
+   sit above raised ones, which sit above cards, so in dark each step is a
+   little lighter: a card-coloured menu over a card would vanish. Light keeps
+   the white card, which the float shadow lifts. The strong edge is for a
+   hovered or selected card outline. */
+:root,
+[data-theme="dark"] {
+  --color-surface-raised: #1b2524;
+  --color-surface-float: #232f2e;
+  --color-border-emphasis: #3a4a47;
+}
+[data-theme="light"] {
+  --color-surface-raised: var(--dk-card);
+  --color-surface-float: var(--dk-card);
+  --color-border-emphasis: color-mix(in srgb, var(--dk-edge) 70%, var(--dk-control-edge));
+}
+
+/* Data hues that have no status role come from the theme's chart series,
+   so charts and code highlighting follow the palette in both modes. */
+:root {
+  --color-data-3: var(--dk-series-3);
+  --color-data-6: var(--dk-series-2);
+  --color-data-7: var(--dk-series-1);
+}

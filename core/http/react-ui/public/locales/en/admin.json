@@ -1,0 +1,106 @@
+{
+  "activity": {
+    "hide": "Hide",
+    "moveToHistory": "Move to history",
+    "moreCount": "{{count}} more",
+    "waitingForInstaller": "waiting for the installer",
+    "progressLabel": "Progress for {{name}}",
+    "toNode": "to {{node}}",
+    "nodesDone": "{{done}} of {{total}} nodes done",
+    "kind": {
+      "model": "model",
+      "backend": "backend"
+    },
+    "verb": {
+      "installing": "Installing {{kind}}",
+      "installed": "Installed {{kind}}",
+      "removed": "Removed {{kind}}",
+      "staged": "Staged model",
+      "failed": "Couldn't install {{kind}}",
+      "queued": "Queued",
+      "staging": "Staging model",
+      "removing": "Removing {{kind}}",
+      "failedRemoval": "Couldn't remove {{kind}}",
+      "failedStaging": "Couldn't stage model"
+    },
+    "phase": {
+      "resolving": "Resolving files",
+      "downloading": "Downloading",
+      "verifying": "Verifying",
+      "committing": "Finalizing",
+      "persisting": "Saving configuration"
+    }
+  },
+  "manage": {
+    "title": "System",
+    "subtitle": "Manage installed models and backends"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure LocalAI runtime settings",
+    "saved": "Settings saved successfully",
+    "saveFailed": "Save failed: {{message}}",
+    "loadFailed": "Failed to load settings: {{message}}",
+    "sections": {
+      "branding": "Branding",
+      "watchdog": "Watchdog",
+      "memory": "Memory",
+      "backends": "Backends",
+      "performance": "Performance",
+      "tracing": "Tracing",
+      "api": "API & CORS",
+      "p2p": "P2P",
+      "galleries": "Galleries",
+      "apikeys": "API Keys",
+      "agents": "Agent Jobs",
+      "agentpool": "Agent Pool",
+      "assistant": "LocalAI Assistant",
+      "distributed": "Distributed",
+      "responses": "Responses"
+    }
+  },
+  "traces": {
+    "title": "Traces",
+    "subtitle": "View logged API requests, responses, and backend operations"
+  },
+  "users": {
+    "title": "Users and keys",
+    "subtitle": "People, invites and API keys"
+  },
+  "usage": {
+    "title": "Usage",
+    "subtitle": "API token usage statistics",
+    "sources": {
+      "tab": "Sources",
+      "mixTitle": "Source mix",
+      "ribbonAria": "{{apikey}}% API keys, {{web}}% Web UI, {{legacy}}% Legacy",
+      "topSources": "Top sources over time",
+      "searchPlaceholder": "Search by name or prefix",
+      "sortBy": "Sort",
+      "sortTokens": "Tokens",
+      "sortRequests": "Requests",
+      "sortLastUsed": "Last used",
+      "sortName": "Name",
+      "sortUser": "User",
+      "webUI": "Web UI",
+      "legacy": "Legacy",
+      "revoked": "revoked",
+      "filteredTo": "Filtered to: {{name}}",
+      "clearFilter": "Clear filter",
+      "other": "Other ({{count}})",
+      "noTrafficShort": "No requests in this period.",
+      "noKeysYet": "Once requests come in, you'll see them broken down here.",
+      "createKey": "Create your first API key",
+      "truncatedWarning": "Showing top 200 keys. Apply a filter to narrow further."
+    }
+  },
+  "explorer": {
+    "title": "Explorer",
+    "subtitle": "Browse files and configuration"
+  },
+  "tabs": {
+    "users": "Users",
+    "invites": "Invites",
+    "keys": "API keys"
+  }
+}

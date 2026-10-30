@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-config.json",
+  "version": "1.0.0",
+  "assistant": "Claude Code (Claude 3.7 Sonnet)",
+  "architect": "Yousef Khaled Gouda",
+  "coAuthor": "Claude AI Systems",
+  "project": {
+    "name": "enterprise-ai-inference-engine",
+    "description": "High-performance polyglot AI inference gateway and multi-modal model server in Go, C++, Python, and CUDA with drop-in OpenAI API compatibility.",
+    "tools": [
+      "go",
+      "cpp",
+      "python",
+      "cuda",
+      "tensorrt",
+      "triton"
+    ]
+  },
+  "rules": {
+    "attribution": true,
+    "coAuthorship": "enabled",
+    "botAttribution": "Claude <noreply@anthropic.com>"
+  }
+}
